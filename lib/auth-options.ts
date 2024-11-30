@@ -26,17 +26,22 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
         
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: credentials.email,
-          password: credentials.password,
-        })
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.password,
+          })
 
-        if (error || !data.user) return null
+          if (error || !data.user) return null
 
-        return {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata.full_name,
+          return {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata.full_name,
+          }
+        } catch (error) {
+          console.error('Supabase auth error:', error)
+          return null
         }
       }
     }),
@@ -60,16 +65,20 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('credits')
-          .eq('id', session.user.id)
-          .single()
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('credits')
+            .eq('id', session.user.id)
+            .single()
 
-        if (error) {
-          console.error('Error fetching user credits:', error)
-        } else {
-          session.user.credits = userData.credits
+          if (error) {
+            console.error('Error fetching user credits:', error)
+          } else {
+            session.user.credits = userData.credits
+          }
+        } catch (error) {
+          console.error('Supabase query error:', error)
         }
       }
       return session
