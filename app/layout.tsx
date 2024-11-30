@@ -1,23 +1,24 @@
 import { Inter } from 'next/font/google'
-import { getServerSession } from 'next-auth/next'
-import SessionProvider from '@/components/SessionProvider'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export default async function RootLayout({
+export const metadata = {
+  title: 'AI Image Generator',
+  description: 'Transform your ideas into stunning images with the power of AI',
+}
+
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession()
-
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider session={session}>
-          {children}
-        </SessionProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   )
