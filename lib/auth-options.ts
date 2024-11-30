@@ -1,23 +1,25 @@
-import { NextAuthOptions } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import { supabase } from '@/lib/supabase'
+import { NextAuthOptions } from "next-auth"
+import { SupabaseAdapter } from "@auth/supabase-adapter"
+import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
-      name: 'Credentials',
+      name: 'Supabase',
       credentials: {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
-
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email: credentials.email,
           password: credentials.password,
@@ -31,32 +33,17 @@ export const authOptions: NextAuthOptions = {
           name: data.user.user_metadata.full_name,
         }
       }
-    })
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
+  adapter: SupabaseAdapter({
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  }),
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === 'google') {
-        const { data, error } = await supabase
-          .from('users')
-          .upsert({
-            id: user.id,
-            email: user.email!,
-            full_name: user.name,
-            google_id: account.providerAccountId,
-            credits: 10, // Give new users 10 free credits
-          }, {
-            onConflict: 'email',
-            ignoreDuplicates: false,
-          })
-          .select()
-
-        if (error) {
-          console.error('Error storing user data:', error)
-          return false
-        }
-      }
-      return true
-    },
     async jwt({ token, user, account }) {
       if (account && user) {
         token.accessToken = account.access_token
@@ -83,8 +70,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/signin',
-    error: '/auth/error',
+    signIn: '/login',
+  },
+  session: {
+    strategy: 'jwt',
   },
 }
 

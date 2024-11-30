@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { User } from '@supabase/supabase-js'
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function Dashboard() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Welcome to your Dashboard</CardTitle>
-          <CardDescription>You're logged in as {user.email}</CardDescription>
+          <CardDescription>You&apos;re logged in as {user.email}</CardDescription>
         </CardHeader>
         <CardContent>
           <p>Your user ID is: {user.id}</p>
